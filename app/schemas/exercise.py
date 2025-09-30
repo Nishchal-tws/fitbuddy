@@ -8,7 +8,7 @@ class ExerciseBase(BaseModel):
 	description: str | None = None
 
 	model_config = {"from_attributes": True}
-
+# the model_config hereis used as bridge to talk with sqlaclhemy ORM to convert the python object to json automatically 
 
 class ExerciseCreate(ExerciseBase):
 	pass

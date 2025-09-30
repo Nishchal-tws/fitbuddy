@@ -26,8 +26,12 @@ def create_exercise(payload: ExerciseCreate, db: Session = Depends(get_db), curr
 
 @router.get("/", response_model=list[ExerciseRead])
 def list_exercises(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-	rows = db.execute(select(Exercise).where(Exercise.owner_id == current_user.id).order_by(Exercise.name)).scalars().all()
-	return rows
+    rows = db.execute(
+        select(Exercise)
+        .where((Exercise.owner_id == current_user.id) | (Exercise.owner_id.is_(None)))
+        .order_by(Exercise.name)
+    ).scalars().all()
+    return rows
 
 
 @router.get("/{exercise_id}", response_model=ExerciseRead)
@@ -43,7 +47,7 @@ def update_exercise(exercise_id: int, payload: ExerciseUpdate, db: Session = Dep
 	ex = db.get(Exercise, exercise_id)
 	if not ex or ex.owner_id != current_user.id:
 		raise HTTPException(status_code=404, detail="Exercise not found")
-	data = payload.model_dump(exclude_unset=True)
+	data = payload.model_dump(exclude_unset=True) # .model_dump is used to convert the pydantic model to a dictionary and the exclude_unset = True is used to ignore everything else that has been default value or was not provided
 	for key, value in data.items():
 		setattr(ex, key, value)
 	db.add(ex)
@@ -60,3 +64,5 @@ def delete_exercise(exercise_id: int, db: Session = Depends(get_db), current_use
 	db.delete(ex)
 	db.commit()
 	return None
+
+

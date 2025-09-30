@@ -18,5 +18,6 @@ class Exercise(Base):
 	category: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
 	description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-	owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
-	owner: Mapped[User] = relationship(back_populates="exercises")
+	# If NULL => system exercise
+	owner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True)
+	owner: Mapped[User | None] = relationship(back_populates="exercises")
