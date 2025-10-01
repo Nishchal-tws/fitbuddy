@@ -29,7 +29,7 @@ app.add_middleware(
     allow_headers = ["*"]
 
 )
-@app.lifespan("startup")
+@app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
     # Safe migration: add duration_minutes to workout_sessions if missing

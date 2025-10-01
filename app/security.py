@@ -1,3 +1,4 @@
+# this file is for hashing the password and creating the access token and decoding the access token automatically taking from the config.py file
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
@@ -34,3 +35,4 @@ def decode_token(token: str) -> dict[str, Any] | None:
 		return payload
 	except JWTError:
 		return None
+

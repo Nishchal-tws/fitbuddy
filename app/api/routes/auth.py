@@ -17,7 +17,7 @@ def register_user(payload: UserCreate, db: Session = Depends(get_db)):
 	existing = db.execute(select(User).where(User.email == payload.email)).scalar_one_or_none()
 	if existing:
 		raise HTTPException(status_code=400, detail="Email already registered")
-	user = User(email=payload.email, full_name=payload.full_name, password_hash=get_password_hash(payload.password))
+	user = User(email=payload.email, full_name=payload.full_name, password_hash=get_password_hash(payload.password), experience_level=payload.experience_level)
 	db.add(user)
 	db.commit()
 	db.refresh(user)
@@ -31,3 +31,5 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
 		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
 	token = create_access_token(subject=user.id)
 	return Token(access_token=token)
+
+

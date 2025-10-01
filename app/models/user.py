@@ -23,7 +23,7 @@ class User(Base):
 	experience_level: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
 	exercises: Mapped[list[Exercise]] = relationship(back_populates="owner", cascade="all, delete-orphan")
-	workouts: Mapped[list[WorkoutSession]] = relationship(back_populates="owner", cascade="all, delete-orphan")
+	workouts: Mapped[list[WorkoutSession]] = relationship(back_populates="owner" , cascade="all, delete-orphan")
 	workout_plans: Mapped[list[Workout]] = relationship(back_populates="owner", cascade="all, delete-orphan")
 	goals: Mapped[list[Goal]] = relationship(back_populates="owner", cascade="all, delete-orphan")
 	progress_entries: Mapped[list[Progress]] = relationship(back_populates="owner", cascade="all, delete-orphan")
