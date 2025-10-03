@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
+import ProgressChart from './ProgressChart.jsx'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
 
@@ -127,8 +128,8 @@ export default function DashboardHome() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2 min-h-64 grid place-items-center text-gray-500">
-          <span>Detailed analytics and charts are coming soon!</span>
+        <div className="lg:col-span-2">
+          <ProgressChart />
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
@@ -154,11 +155,61 @@ export default function DashboardHome() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {[1,2,3].map((i) => (
-          <div key={i} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm min-h-40 grid place-items-center text-gray-500">
-            Advanced widget placeholder
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-6 w-6 rounded bg-blue-100 grid place-items-center">
+              <span className="text-blue-600 text-sm font-bold">💪</span>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Recent Workouts</h3>
           </div>
-        ))}
+          <div className="space-y-2">
+            <div className="text-sm text-gray-500">No recent workouts logged</div>
+            <div className="text-xs text-gray-400">Start logging your workouts to see them here</div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-6 w-6 rounded bg-green-100 grid place-items-center">
+              <span className="text-green-600 text-sm font-bold">📊</span>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Quick Stats</h3>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">This Week</span>
+              <span className="font-medium">3 workouts</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Total Progress</span>
+              <span className="font-medium">4 metrics</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Active Goals</span>
+              <span className="font-medium">{goals.length}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-6 w-6 rounded bg-purple-100 grid place-items-center">
+              <span className="text-purple-600 text-sm font-bold">🎯</span>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+          </div>
+          <div className="space-y-2">
+            <button className="w-full text-left p-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+              Log New Workout
+            </button>
+            <button className="w-full text-left p-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+              Add Progress Entry
+            </button>
+            <button className="w-full text-left p-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+              Set New Goal
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

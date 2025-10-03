@@ -228,7 +228,7 @@ export default function GoalTracker() {
             {editingGoal ? 'Edit Goal' : 'Create New Goal'}
           </h3>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" data-lpignore="true">
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
                 Goal Title *

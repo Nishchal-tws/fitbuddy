@@ -101,7 +101,7 @@ export default function WorkoutForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" data-lpignore="true">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
             Workout Title *

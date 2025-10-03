@@ -27,7 +27,7 @@ ChartJS.register(
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
 
-export default function ProgressChart() {
+export default function ProgressChart({ refreshTrigger }) {
   const [progressData, setProgressData] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -45,7 +45,7 @@ export default function ProgressChart() {
 
   useEffect(() => {
     fetchProgressData()
-  }, [timeRange])
+  }, [timeRange, refreshTrigger])
 
   const fetchProgressData = async () => {
     setLoading(true)
@@ -196,7 +196,7 @@ export default function ProgressChart() {
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
-            className="px-3 py-1 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
             {timeRanges.map(range => (
               <option key={range.value} value={range.value}>

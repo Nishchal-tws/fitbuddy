@@ -140,7 +140,7 @@ export default function AuthPage({ onLogin }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid gap-3 mt-4">
+        <form onSubmit={handleSubmit} className="grid gap-3 mt-4" data-lpignore="true">
           {!isLogin && (
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
