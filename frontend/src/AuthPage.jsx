@@ -85,74 +85,42 @@ export default function AuthPage({ onLogin }) {
   }
 
   return (
-    <div style={{
-      minHeight: '100svh',
-      display: 'grid',
-      placeItems: 'center',
-      background: '#0f172a',
-      color: '#e2e8f0',
-      padding: '24px'
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '380px',
-        background: '#111827',
-        border: '1px solid #1f2937',
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.35)'
-      }}>
-        <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>FitBuddy</h1>
-        <p style={{ marginTop: '6px', opacity: 0.8 }}>
+    <div className="min-h-screen grid place-items-center bg-gray-50 p-6">
+      <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="h-9 w-9 rounded-xl bg-primary-600 grid place-items-center text-white font-bold">FB</div>
+          <h1 className="text-2xl font-semibold text-gray-900">FitBuddy</h1>
+        </div>
+        <p className="text-gray-500 mb-6">
           {isLogin ? 'Welcome back. Sign in to continue.' : 'Create your account to get started.'}
         </p>
 
         {/* Error Message */}
         {error && (
-          <div style={{
-            marginTop: '12px',
-            padding: '10px 12px',
-            background: '#dc2626',
-            border: '1px solid #b91c1c',
-            borderRadius: '8px',
-            color: '#fecaca',
-            fontSize: '14px'
-          }}>
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
             {error}
           </div>
         )}
 
         {/* Success Message */}
         {success && (
-          <div style={{
-            marginTop: '12px',
-            padding: '10px 12px',
-            background: '#059669',
-            border: '1px solid #047857',
-            borderRadius: '8px',
-            color: '#a7f3d0',
-            fontSize: '14px'
-          }}>
+          <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
             {success}
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+        <div className="flex gap-2 mt-4">
           <button
             onClick={() => {
               setMode('login')
               setError('')
               setSuccess('')
             }}
-            style={{
-              flex: 1,
-              padding: '10px 12px',
-              borderRadius: '8px',
-              border: isLogin ? '1px solid #3b82f6' : '1px solid #374151',
-              background: isLogin ? '#1f2937' : 'transparent',
-              color: '#e2e8f0',
-              cursor: 'pointer'
-            }}
+            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isLogin
+                ? 'bg-primary-600 text-white'
+                : 'text-gray-700 hover:bg-gray-100 border border-gray-200'
+            }`}
           >
             Login
           </button>
@@ -162,65 +130,65 @@ export default function AuthPage({ onLogin }) {
               setError('')
               setSuccess('')
             }}
-            style={{
-              flex: 1,
-              padding: '10px 12px',
-              borderRadius: '8px',
-              border: !isLogin ? '1px solid #3b82f6' : '1px solid #374151',
-              background: !isLogin ? '#1f2937' : 'transparent',
-              color: '#e2e8f0',
-              cursor: 'pointer'
-            }}
+            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              !isLogin
+                ? 'bg-primary-600 text-white'
+                : 'text-gray-700 hover:bg-gray-100 border border-gray-200'
+            }`}
           >
             Register
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '12px', marginTop: '16px' }}>
+        <form onSubmit={handleSubmit} className="grid gap-3 mt-4">
           {!isLogin && (
             <div>
-              <label htmlFor="name" style={{ display: 'block', marginBottom: '6px' }}>Name</label>
-              <input id="name" name="name" type="text" required
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <input 
+                id="name" 
+                name="name" 
+                type="text" 
+                required
                 placeholder="Your name"
-                style={{
-                  width: '100%', padding: '10px 12px', borderRadius: '8px',
-                  border: '1px solid #374151', background: '#0b1220', color: '#e2e8f0'
-                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
               />
             </div>
           )}
 
           <div>
-            <label htmlFor="email" style={{ display: 'block', marginBottom: '6px' }}>Email</label>
-            <input id="email" name="email" type="email" required
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input 
+              id="email" 
+              name="email" 
+              type="email" 
+              required
               placeholder="you@example.com"
-              style={{
-                width: '100%', padding: '10px 12px', borderRadius: '8px',
-                border: '1px solid #374151', background: '#0b1220', color: '#e2e8f0'
-              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
             />
           </div>
 
           <div>
-            <label htmlFor="password" style={{ display: 'block', marginBottom: '6px' }}>Password</label>
-            <input id="password" name="password" type="password" required
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input 
+              id="password" 
+              name="password" 
+              type="password" 
+              required
               placeholder="********"
-              style={{
-                width: '100%', padding: '10px 12px', borderRadius: '8px',
-                border: '1px solid #374151', background: '#0b1220', color: '#e2e8f0'
-              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
             />
           </div>
 
-          {isLogin ? null : (
+          {!isLogin && (
             <div>
-              <label htmlFor="experience_level" style={{ display: 'block', marginBottom: '6px' }}>Experience Level</label>
-              <input id="experience_level" name="experience_level" type="text" required
+              <label htmlFor="experience_level" className="block text-sm font-medium text-gray-700 mb-1">Experience Level</label>
+              <input 
+                id="experience_level" 
+                name="experience_level" 
+                type="text" 
+                required
                 placeholder="Beginner, Intermediate, Advanced"
-                style={{
-                  width: '100%', padding: '10px 12px', borderRadius: '8px',
-                  border: '1px solid #374151', background: '#0b1220', color: '#e2e8f0'
-                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
               />
             </div>
           )}
@@ -228,29 +196,26 @@ export default function AuthPage({ onLogin }) {
           <button 
             type="submit" 
             disabled={loading}
-            style={{
-              marginTop: '8px', padding: '12px', width: '100%', borderRadius: '8px',
-              border: '1px solid #3b82f6', 
-              background: loading ? '#6b7280' : '#1d4ed8', 
-              color: 'white',
-              fontWeight: 600, 
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1
-            }}
+            className={`mt-2 w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
+              loading 
+                ? 'bg-gray-400 text-white cursor-not-allowed' 
+                : 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-2 focus:ring-primary-500'
+            }`}
           >
             {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
           </button>
         </form>
 
         {isLogin && (
-          <div style={{ marginTop: '10px', textAlign: 'center', fontSize: '14px' }}>
-            <button onClick={() => {
-              setMode('register')
-              setError('')
-              setSuccess('')
-            }} style={{
-              border: 'none', background: 'transparent', color: '#60a5fa', cursor: 'pointer'
-            }}>
+          <div className="mt-3 text-center">
+            <button 
+              onClick={() => {
+                setMode('register')
+                setError('')
+                setSuccess('')
+              }} 
+              className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+            >
               No account? Register
             </button>
           </div>
