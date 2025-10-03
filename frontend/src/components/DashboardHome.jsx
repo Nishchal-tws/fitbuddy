@@ -1,43 +1,115 @@
 import React, { useEffect, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
 
 export default function DashboardHome() {
   const [goals, setGoals] = useState([])
+  const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [currentQuote, setCurrentQuote] = useState('')
+
+  // Motivational quotes array
+  const motivationalQuotes = [
+    "Every workout counts. Every rep matters. Every step forward is progress.",
+    "The only bad workout is the one that didn't happen.",
+    "Your body can do it. It's your mind you have to convince.",
+    "Strength doesn't come from what you can do. It comes from overcoming the things you once thought you couldn't.",
+    "The pain you feel today will be the strength you feel tomorrow.",
+    "Fitness is not about being better than someone else. It's about being better than you used to be.",
+    "Don't wish for it, work for it.",
+    "The hardest part of any workout is showing up.",
+    "You are stronger than you think, more capable than you imagine.",
+    "Progress, not perfection, is the goal.",
+    "Every expert was once a beginner. Every pro was once an amateur.",
+    "The body achieves what the mind believes.",
+    "Success isn't always about greatness. It's about consistency.",
+    "You don't have to be great to get started, but you have to get started to be great.",
+    "The only impossible journey is the one you never begin."
+  ]
 
   useEffect(() => {
-    async function fetchGoals() {
+    async function fetchData() {
       try {
         setLoading(true)
         setError('')
         const token = localStorage.getItem('access_token')
-        const res = await fetch(`${API_BASE_URL}/api/goals/`, {
+        
+        // Fetch user data
+        const userRes = await fetch(`${API_BASE_URL}/api/users/me`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         })
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}))
-          throw new Error(data.detail || 'Failed to load goals')
+        if (userRes.ok) {
+          const userData = await userRes.json()
+          setUser(userData)
         }
-        const data = await res.json()
-        setGoals(Array.isArray(data) ? data.slice(0, 3) : [])
+
+        // Fetch goals data
+        const goalsRes = await fetch(`${API_BASE_URL}/api/goals/`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+        if (goalsRes.ok) {
+          const goalsData = await goalsRes.json()
+          setGoals(Array.isArray(goalsData) ? goalsData.slice(0, 3) : [])
+        }
       } catch (e) {
         setError(e.message)
       } finally {
         setLoading(false)
       }
     }
-    fetchGoals()
+    fetchData()
   }, [])
+
+  // Get random motivational quote
+  const getRandomQuote = () => {
+    return motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]
+  }
+
+  // Set initial quote
+  useEffect(() => {
+    setCurrentQuote(getRandomQuote())
+  }, [])
+
+  // Refresh quote function
+  const refreshQuote = () => {
+    setCurrentQuote(getRandomQuote())
+  }
+
+  // Get user's first name
+  const getFirstName = () => {
+    if (!user?.full_name) return 'Champion'
+    return user.full_name.split(' ')[0]
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Welcome Back</h1>
-        <p className="text-gray-500">Here is your quick overview.</p>
+      <div className="bg-gradient-to-r from-primary-50 to-purple-50 rounded-2xl p-6 border border-primary-100">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome, {getFirstName()}! 👋
+            </h1>
+            <p className="text-lg text-primary-700 font-medium italic">
+              "{currentQuote}"
+            </p>
+            <p className="text-sm text-gray-600 mt-3">
+              Here's your fitness overview for today.
+            </p>
+          </div>
+          <button
+            onClick={refreshQuote}
+            className="ml-4 p-2 text-primary-600 hover:text-primary-700 hover:bg-primary-100 rounded-lg transition-colors"
+            title="Get new motivational quote"
+          >
+            <RefreshCw size={20} />
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

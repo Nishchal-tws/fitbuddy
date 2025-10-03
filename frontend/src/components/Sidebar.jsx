@@ -15,7 +15,7 @@ export default function Sidebar({ activePage, setActivePage, onLogout }) {
       <div className="px-5 py-6">
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-xl bg-primary-600 grid place-items-center text-white font-bold">FB</div>
-          <div className="text-xl font-semibold">FitBuddy</div>
+          <div className="text-xl font-semibold">Fit Buddy</div>
         </div>
       </div>
       <nav className="px-3 flex-1">
