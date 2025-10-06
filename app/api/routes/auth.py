@@ -11,7 +11,6 @@ from app.security import get_password_hash, verify_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def register_user(payload: UserCreate, db: Session = Depends(get_db)):
 	existing = db.execute(select(User).where(User.email == payload.email)).scalar_one_or_none()
