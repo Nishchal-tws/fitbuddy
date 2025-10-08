@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING
-from sqlalchemy import String, ForeignKey, DateTime, Text, Integer
+from sqlalchemy import String, ForeignKey, DateTime, Text, Integer, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -20,6 +20,8 @@ class WorkoutSession(Base):
 	performed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 	# duration in minutes
 	duration_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+	# exercises performed in this workout session (stored as JSON)
+	exercises: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
 
 	owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
 	owner: Mapped[User] = relationship(back_populates="workouts")
@@ -47,4 +49,5 @@ class SavedPlan(Base):
 	id: Mapped[int] = mapped_column(primary_key=True, index=True)
 	user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
 	workout_id: Mapped[int] = mapped_column(ForeignKey("workouts.id", ondelete="CASCADE"), index=True, nullable=False)
+	start_date: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, nullable=True)
 

@@ -34,7 +34,8 @@ export default function WorkoutForm() {
         body: JSON.stringify({
           ...formData,
           duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
-          performed_at: formData.performed_at ? new Date(formData.performed_at).toISOString() : null
+          performed_at: formData.performed_at ? new Date(formData.performed_at).toISOString() : null,
+          exercises: selectedExercises
         })
       })
 

@@ -6,6 +6,7 @@ const API_BASE_URL = 'http://127.0.0.1:8000'
 
 export default function DashboardHome() {
   const [goals, setGoals] = useState([])
+  const [workouts, setWorkouts] = useState([])
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -30,40 +31,59 @@ export default function DashboardHome() {
     "The only impossible journey is the one you never begin."
   ]
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true)
-        setError('')
-        const token = localStorage.getItem('access_token')
-        
-        // Fetch user data
-        const userRes = await fetch(`${API_BASE_URL}/api/users/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        })
-        if (userRes.ok) {
-          const userData = await userRes.json()
-          setUser(userData)
+  // Fetch data function
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      setError('')
+      const token = localStorage.getItem('access_token')
+      
+      // Fetch user data
+      const userRes = await fetch(`${API_BASE_URL}/api/users/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-
-        // Fetch goals data
-        const goalsRes = await fetch(`${API_BASE_URL}/api/goals/`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        })
-        if (goalsRes.ok) {
-          const goalsData = await goalsRes.json()
-          setGoals(Array.isArray(goalsData) ? goalsData.slice(0, 3) : [])
-        }
-      } catch (e) {
-        setError(e.message)
-      } finally {
-        setLoading(false)
+      })
+      if (userRes.ok) {
+        const userData = await userRes.json()
+        setUser(userData)
       }
+
+      // Fetch goals data
+      const goalsRes = await fetch(`${API_BASE_URL}/api/goals/`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      if (goalsRes.ok) {
+        const goalsData = await goalsRes.json()
+        setGoals(Array.isArray(goalsData) ? goalsData.slice(0, 3) : [])
+      }
+
+      // Fetch recent workouts
+      const workoutsRes = await fetch(`${API_BASE_URL}/api/workouts/`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      if (workoutsRes.ok) {
+        const workoutsData = await workoutsRes.json()
+        // Sort by performed_at date (most recent first) and take first 3
+        const sortedWorkouts = Array.isArray(workoutsData) 
+          ? workoutsData
+              .sort((a, b) => new Date(b.performed_at) - new Date(a.performed_at))
+              .slice(0, 3)
+          : []
+        setWorkouts(sortedWorkouts)
+      }
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchData()
   }, [])
 
@@ -80,6 +100,12 @@ export default function DashboardHome() {
   // Refresh quote function
   const refreshQuote = () => {
     setCurrentQuote(getRandomQuote())
+  }
+
+  // Refresh all data function
+  const refreshData = () => {
+    setLoading(true)
+    fetchData()
   }
 
   // Get user's first name
@@ -163,8 +189,27 @@ export default function DashboardHome() {
             <h3 className="text-lg font-semibold text-gray-900">Recent Workouts</h3>
           </div>
           <div className="space-y-2">
-            <div className="text-sm text-gray-500">No recent workouts logged</div>
-            <div className="text-xs text-gray-400">Start logging your workouts to see them here</div>
+            {workouts.length === 0 ? (
+              <>
+                <div className="text-sm text-gray-500">No recent workouts logged</div>
+                <div className="text-xs text-gray-400">Start logging your workouts to see them here</div>
+              </>
+            ) : (
+              workouts.map((workout) => (
+                <div key={workout.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 text-sm">{workout.title}</div>
+                    <div className="text-xs text-gray-500">
+                      {new Date(workout.performed_at).toLocaleDateString()} 
+                      {workout.duration_minutes && ` • ${workout.duration_minutes} min`}
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {workout.exercises?.length || 0} exercises
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -178,7 +223,7 @@ export default function DashboardHome() {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">This Week</span>
-              <span className="font-medium">3 workouts</span>
+              <span className="font-medium">{workouts.length} workouts</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Total Progress</span>

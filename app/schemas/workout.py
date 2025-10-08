@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 
 
@@ -7,6 +8,7 @@ class WorkoutBase(BaseModel):
 	notes: str | None = None
 	performed_at: datetime | None = None
 	duration_minutes: int | None = None
+	exercises: List[Dict[str, Any]] | None = None
 
 	model_config = {"from_attributes": True}
 
@@ -20,6 +22,7 @@ class WorkoutUpdate(BaseModel):
 	notes: str | None = None
 	performed_at: datetime | None = None
 	duration_minutes: int | None = None
+	exercises: List[Dict[str, Any]] | None = None
 
 
 class WorkoutRead(WorkoutBase):

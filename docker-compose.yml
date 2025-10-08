@@ -49,6 +49,27 @@ services:
       timeout: 10s
       retries: 3
 
+  # Spring Boot Analytics Service
+  analytics:
+    build:
+      context: ./analytics-service
+      dockerfile: Dockerfile
+    container_name: fitbuddy_analytics
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/postgres
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root123
+    ports:
+      - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/analytics/system-plans"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # React Frontend
   frontend:
     build:

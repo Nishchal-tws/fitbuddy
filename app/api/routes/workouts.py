@@ -17,6 +17,7 @@ def create_workout(payload: WorkoutCreate, db: Session = Depends(get_db), curren
 		notes=payload.notes,
 		performed_at=payload.performed_at,
 		duration_minutes=payload.duration_minutes,
+		exercises=payload.exercises,
 		owner_id=current_user.id,
 	)
 	db.add(workout)

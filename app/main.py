@@ -10,6 +10,7 @@ from app.api.routes import goals as goals_routes
 from app.api.routes import users as users_routes
 from app.api.routes import plans as plans_routes
 from app.api.routes import progress as progress_routes
+from app.api.routes import admin as admin_routes
 import app.db.base  # noqa: F401  # ensure models are imported
 
 
@@ -64,3 +65,4 @@ app.include_router(goals_routes.router, prefix="/api")
 app.include_router(progress_routes.router, prefix="/api")
 app.include_router(users_routes.router, prefix="/api")
 app.include_router(plans_routes.router, prefix="/api")
+app.include_router(admin_routes.router, prefix="/api")
