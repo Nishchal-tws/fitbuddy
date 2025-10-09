@@ -41,6 +41,10 @@ class Workout(Base):
 	# If NULL => system plan; else user-specific plan
 	owner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True)
 	owner: Mapped[User] = relationship(back_populates="workout_plans")
+	
+	# Plan completion tracking
+	is_completed: Mapped[bool] = mapped_column(default=False, nullable=False)
+	completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class SavedPlan(Base):

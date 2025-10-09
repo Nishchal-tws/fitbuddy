@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import ProgressChart from './ProgressChart.jsx'
 
-const API_BASE_URL = 'http://127.0.0.1:8000'
+const API_BASE_URL = 'http://localhost:8000'
 
 export default function DashboardHome() {
   const [goals, setGoals] = useState([])

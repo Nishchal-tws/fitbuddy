@@ -25,6 +25,8 @@ class PlanRead(PlanBase):
     id: int
     created_at: datetime
     owner_id: Optional[int] = None
+    is_completed: bool = False
+    completed_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 

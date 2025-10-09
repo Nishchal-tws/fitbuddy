@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Target, Plus, Check, Edit, Trash2, Calendar, Clock } from 'lucide-react'
 
-const API_BASE_URL = 'http://127.0.0.1:8000'
+const API_BASE_URL = 'http://localhost:8000'
 
 export default function GoalTracker() {
   const [goals, setGoals] = useState([])

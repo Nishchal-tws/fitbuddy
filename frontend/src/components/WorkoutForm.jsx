@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Plus, X, Clock, FileText, Dumbbell } from 'lucide-react'
 import ExerciseSelector from './ExerciseSelector.jsx'
 
-const API_BASE_URL = 'http://127.0.0.1:8000'
+const API_BASE_URL = 'http://localhost:8000'
 
 export default function WorkoutForm() {
   const [formData, setFormData] = useState({

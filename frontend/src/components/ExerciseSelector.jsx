@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Search, X, Plus, Dumbbell, Heart, Activity } from 'lucide-react'
 
-const API_BASE_URL = 'http://127.0.0.1:8000'
+const API_BASE_URL = 'http://localhost:8000'
 
 // System exercises data (moved from seed.py)
 const SYSTEM_EXERCISES = [

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Calendar, Clock, Target, Users, Star, CheckCircle, X } from 'lucide-react'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export default function PlansPage() {
   const [plans, setPlans] = useState([])
@@ -10,16 +10,22 @@ export default function PlansPage() {
   const [selectedLevel, setSelectedLevel] = useState('')
   const [activeTab, setActiveTab] = useState('browse') // 'browse' or 'my-plans'
   const [message, setMessage] = useState({ type: '', text: '' })
+  const [selectedPlanExercises, setSelectedPlanExercises] = useState(null)
+  const [loadingExercises, setLoadingExercises] = useState(false)
 
   useEffect(() => {
     // Add a small delay to ensure token is available
     const timer = setTimeout(() => {
-      fetchPlans()
+      if (activeTab === 'browse') {
+        fetchPlans()
+      } else {
+        fetchPlansForMyPlans()
+      }
       fetchMyPlans()
     }, 100)
     
     return () => clearTimeout(timer)
-  }, [selectedLevel])
+  }, [selectedLevel, activeTab])
 
   const fetchPlans = async () => {
     try {
@@ -57,6 +63,87 @@ export default function PlansPage() {
       setMessage({ type: 'error', text: 'Failed to fetch plans' })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchAllPlans = async () => {
+    try {
+      const token = localStorage.getItem('access_token')
+      if (!token) return
+
+      // Fetch both system plans and custom plans
+      const [systemPlansResponse, customPlansResponse] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/plans/`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_BASE_URL}/api/plans/my-plans`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ])
+
+      let allPlans = []
+      if (systemPlansResponse.ok) {
+        const systemPlans = await systemPlansResponse.json()
+        allPlans = [...allPlans, ...systemPlans]
+      }
+
+      if (customPlansResponse.ok) {
+        const myPlans = await customPlansResponse.json()
+        // For custom plans, we need to fetch the actual plan details
+        for (const myPlan of myPlans) {
+          try {
+            const planResponse = await fetch(`${API_BASE_URL}/api/plans/plan/${myPlan.workout_id}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+            if (planResponse.ok) {
+              const planDetails = await planResponse.json()
+              allPlans.push(planDetails)
+            }
+          } catch (error) {
+            console.error(`Error fetching plan details for ${myPlan.workout_id}:`, error)
+          }
+        }
+      }
+
+      setPlans(allPlans)
+    } catch (error) {
+      console.error('Error fetching all plans:', error)
+    }
+  }
+
+  const fetchPlansForMyPlans = async () => {
+    try {
+      const token = localStorage.getItem('access_token')
+      if (!token) return
+
+      // Fetch my plans and get all plan details
+      const myPlansResponse = await fetch(`${API_BASE_URL}/api/plans/my-plans`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+
+      if (myPlansResponse.ok) {
+        const myPlans = await myPlansResponse.json()
+        const planDetails = []
+        
+        // Fetch details for each plan
+        for (const myPlan of myPlans) {
+          try {
+            const planResponse = await fetch(`${API_BASE_URL}/api/plans/plan/${myPlan.workout_id}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+            if (planResponse.ok) {
+              const plan = await planResponse.json()
+              planDetails.push(plan)
+            }
+          } catch (error) {
+            console.error(`Error fetching plan details for ${myPlan.workout_id}:`, error)
+          }
+        }
+        
+        setPlans(planDetails)
+      }
+    } catch (error) {
+      console.error('Error fetching plans for my plans:', error)
     }
   }
 
@@ -145,6 +232,39 @@ export default function PlansPage() {
 
   const isSubscribed = (planId) => {
     return myPlans.some(myPlan => myPlan.workout_id === planId)
+  }
+
+  const fetchPlanExercises = async (planId) => {
+    try {
+      setLoadingExercises(true)
+      const token = localStorage.getItem('access_token')
+      if (!token) return
+
+      const response = await fetch(`${API_BASE_URL}/api/plans/plan/${planId}/exercises`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSelectedPlanExercises(data)
+      } else {
+        console.error('Failed to fetch plan exercises')
+        setMessage({ type: 'error', text: 'Failed to load plan exercises' })
+      }
+    } catch (error) {
+      console.error('Error fetching plan exercises:', error)
+      setMessage({ type: 'error', text: 'Failed to load plan exercises' })
+    } finally {
+      setLoadingExercises(false)
+    }
+  }
+
+  const handlePlanClick = (planId) => {
+    fetchPlanExercises(planId)
+  }
+
+  const closeExercisesModal = () => {
+    setSelectedPlanExercises(null)
   }
 
   const getLevelColor = (level) => {
@@ -256,15 +376,26 @@ export default function PlansPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {plans.map((plan) => (
-                  <div key={plan.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                  <div 
+                    key={plan.id} 
+                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => handlePlanClick(plan.id)}
+                  >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">{plan.title}</h3>
-                        {plan.level && (
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getLevelColor(plan.level)}`}>
-                            {plan.level.charAt(0).toUpperCase() + plan.level.slice(1)}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {plan.level && (
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getLevelColor(plan.level)}`}>
+                              {plan.level.charAt(0).toUpperCase() + plan.level.slice(1)}
+                            </span>
+                          )}
+                          {plan.is_completed && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              ✅ Completed
+                            </span>
+                          )}
+                        </div>
                       </div>
                       {isSubscribed(plan.id) && (
                         <CheckCircle className="h-5 w-5 text-green-500" />
@@ -319,18 +450,59 @@ export default function PlansPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {myPlans.map((myPlan) => {
                   const plan = plans.find(p => p.id === myPlan.workout_id)
-                  if (!plan) return null
+                  if (!plan) {
+                    // If plan not found in plans array, it might be a custom plan
+                    // For now, show a placeholder until we fetch the plan details
+                    return (
+                      <div key={myPlan.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading plan details...</h3>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Custom Plan
+                              </span>
+                            </div>
+                          </div>
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        </div>
+                        <div className="w-full py-2 px-4 rounded-lg font-medium text-sm bg-blue-100 text-blue-700 text-center">
+                          Your Custom Plan
+                        </div>
+                      </div>
+                    )
+                  }
+                  
+                  const isCustomPlan = myPlan.id > 1000000 // Custom plans have high IDs
                   
                   return (
-                    <div key={myPlan.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div 
+                      key={myPlan.id} 
+                      className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => handlePlanClick(myPlan.workout_id)}
+                    >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
                           <h3 className="text-lg font-semibold text-gray-900 mb-2">{plan.title}</h3>
-                          {plan.level && (
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getLevelColor(plan.level)}`}>
-                              {plan.level.charAt(0).toUpperCase() + plan.level.slice(1)}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              {plan.level && (
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getLevelColor(plan.level)}`}>
+                                  {plan.level.charAt(0).toUpperCase() + plan.level.slice(1)}
+                                </span>
+                              )}
+                              {plan.is_completed && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  ✅ Completed
+                                </span>
+                              )}
+                            </div>
+                            {isCustomPlan && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Custom Plan
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <CheckCircle className="h-5 w-5 text-green-500" />
                       </div>
@@ -354,12 +526,18 @@ export default function PlansPage() {
                         )}
                       </div>
 
-                      <button
-                        onClick={() => unsubscribeFromPlan(plan.id)}
-                        className="w-full py-2 px-4 rounded-lg font-medium text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                      >
-                        Unsubscribe
-                      </button>
+                      {isCustomPlan ? (
+                        <div className="w-full py-2 px-4 rounded-lg font-medium text-sm bg-blue-100 text-blue-700 text-center">
+                          Your Custom Plan
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => unsubscribeFromPlan(plan.id)}
+                          className="w-full py-2 px-4 rounded-lg font-medium text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                        >
+                          Unsubscribe
+                        </button>
+                      )}
                     </div>
                   )
                 })}
@@ -368,6 +546,70 @@ export default function PlansPage() {
           </div>
         )}
       </div>
+
+      {/* Exercises Modal */}
+      {selectedPlanExercises && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">{selectedPlanExercises.plan_title}</h2>
+                  <div className="flex items-center gap-4 mt-2">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getLevelColor(selectedPlanExercises.plan_level)}`}>
+                      {selectedPlanExercises.plan_level?.charAt(0).toUpperCase() + selectedPlanExercises.plan_level?.slice(1)}
+                    </span>
+                    <span className="text-sm text-gray-500">{selectedPlanExercises.plan_duration} days</span>
+                  </div>
+                </div>
+                <button
+                  onClick={closeExercisesModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {loadingExercises ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-500">Loading exercises...</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Workout Exercises</h3>
+                  {selectedPlanExercises.exercises.map((exercise, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-gray-900">{exercise.name}</h4>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          exercise.category === 'Strength' ? 'bg-blue-100 text-blue-800' :
+                          exercise.category === 'Cardio' ? 'bg-red-100 text-red-800' :
+                          exercise.category === 'Core' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {exercise.category}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 text-sm text-gray-600">
+                        <div>
+                          <span className="font-medium">Sets:</span> {exercise.sets}
+                        </div>
+                        <div>
+                          <span className="font-medium">Reps:</span> {exercise.reps}
+                        </div>
+                        <div>
+                          <span className="font-medium">Rest:</span> {exercise.rest}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

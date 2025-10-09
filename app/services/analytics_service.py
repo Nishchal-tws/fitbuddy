@@ -5,7 +5,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 class AnalyticsServiceClient:
-    def __init__(self, base_url: str = "http://localhost:8081"):
+    def __init__(self, base_url: str = "http://analytics:8081"):
         self.base_url = base_url
         
     async def notify_new_goal(self, goal_id: int = None, user_id: int = None) -> bool:
