@@ -13,3 +13,16 @@ email-validator==2.2.0
 requests==2.31.0
 httpx==0.27.0
 
+# RabbitMQ and Message Queue Dependencies
+pika==1.3.2
+celery==5.3.4
+kombu==5.3.4
+
+# Redis Dependencies
+redis==5.0.1
+hiredis==2.2.3
+
+# Additional Background Processing Dependencies
+APScheduler==3.10.4
+python-dateutil==2.8.2
+

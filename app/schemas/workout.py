@@ -9,6 +9,7 @@ class WorkoutBase(BaseModel):
 	performed_at: datetime | None = None
 	duration_minutes: int | None = None
 	exercises: List[Dict[str, Any]] | None = None
+	calories_burned: float | None = None
 
 	model_config = {"from_attributes": True}
 
@@ -23,6 +24,7 @@ class WorkoutUpdate(BaseModel):
 	performed_at: datetime | None = None
 	duration_minutes: int | None = None
 	exercises: List[Dict[str, Any]] | None = None
+	calories_burned: float | None = None
 
 
 class WorkoutRead(WorkoutBase):

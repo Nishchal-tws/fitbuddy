@@ -3,6 +3,7 @@ import { RefreshCw } from 'lucide-react'
 import ProgressChart from './ProgressChart.jsx'
 
 const API_BASE_URL = 'http://localhost:8000'
+const ANALYTICS_API_URL = 'http://localhost:8081'
 
 export default function DashboardHome() {
   const [goals, setGoals] = useState([])
@@ -11,6 +12,7 @@ export default function DashboardHome() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [currentQuote, setCurrentQuote] = useState('')
+  const [dailyCalories, setDailyCalories] = useState(0)
 
   // Motivational quotes array
   const motivationalQuotes = [
@@ -30,6 +32,19 @@ export default function DashboardHome() {
     "You don't have to be great to get started, but you have to get started to be great.",
     "The only impossible journey is the one you never begin."
   ]
+
+  // Calculate total calories from workout data
+  const calculateTotalCalories = (workouts) => {
+    if (!workouts || !Array.isArray(workouts)) return 0
+    
+    // Sum up calories from all workouts
+    const totalCalories = workouts.reduce((sum, workout) => {
+      return sum + (workout.calories_burned || 0)
+    }, 0)
+    
+    return totalCalories
+  }
+
 
   // Fetch data function
   const fetchData = async () => {
@@ -75,6 +90,11 @@ export default function DashboardHome() {
               .slice(0, 3)
           : []
         setWorkouts(sortedWorkouts)
+        
+        // Calculate total calories from all workouts (not just recent ones)
+        const allWorkouts = Array.isArray(workoutsData) ? workoutsData : []
+        const totalCalories = calculateTotalCalories(allWorkouts)
+        setDailyCalories(totalCalories)
       }
     } catch (e) {
       setError(e.message)
@@ -143,12 +163,19 @@ export default function DashboardHome() {
         {[
           { label: 'Steps', value: '2,500' },
           { label: 'Water', value: '1.25 Liters' },
-          { label: 'Calories', value: '750' },
+          { 
+            label: 'Calories Burned', 
+            value: dailyCalories > 0 ? `${Math.round(dailyCalories)} cal` : 'No data',
+            subtitle: 'Based on workout data'
+          },
           { label: 'Heart Rate', value: '110 Bpm' },
         ].map((card) => (
           <div key={card.label} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="text-sm text-gray-500">{card.label}</div>
             <div className="mt-2 text-2xl font-semibold text-primary-700">{card.value}</div>
+            {card.subtitle && (
+              <div className="text-xs text-gray-400 mt-1">{card.subtitle}</div>
+            )}
           </div>
         ))}
       </div>
@@ -204,8 +231,15 @@ export default function DashboardHome() {
                       {workout.duration_minutes && ` • ${workout.duration_minutes} min`}
                     </div>
                   </div>
-                  <div className="text-xs text-gray-400">
-                    {workout.exercises?.length || 0} exercises
+                  <div className="text-right">
+                    <div className="text-xs text-gray-400">
+                      {workout.exercises?.length || 0} exercises
+                    </div>
+                    {workout.calories_burned && (
+                      <div className="text-xs text-orange-600 font-medium">
+                        {Math.round(workout.calories_burned)} cal
+                      </div>
+                    )}
                   </div>
                 </div>
               ))

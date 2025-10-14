@@ -20,6 +20,41 @@ services:
       timeout: 5s
       retries: 5
 
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: fitbuddy_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: fitbuddy
+      RABBITMQ_DEFAULT_PASS: fitbuddy123
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "5672:5672"    # AMQP port
+      - "15672:15672"  # Management UI port
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: fitbuddy_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
   # FastAPI Backend
   backend:
     build:
@@ -31,10 +66,25 @@ services:
       JWT_SECRET_KEY: your-super-secret-jwt-key-change-in-production
       JWT_ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 60
+      # RabbitMQ Configuration
+      RABBITMQ_URL: amqp://fitbuddy:fitbuddy123@rabbitmq:5672/
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: fitbuddy
+      RABBITMQ_PASSWORD: fitbuddy123
+      # Redis Configuration
+      REDIS_URL: redis://redis:6379/0
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
     ports:
       - "8000:8000"
     depends_on:
       db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - ./alembic:/app/alembic
@@ -59,16 +109,74 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/postgres
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: root123
+      # RabbitMQ Configuration
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: fitbuddy
+      SPRING_RABBITMQ_PASSWORD: fitbuddy123
+      SPRING_RABBITMQ_VIRTUAL_HOST: /
+      # Redis Configuration
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_DATABASE: 0
     ports:
       - "8081:8081"
     depends_on:
       db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/api/analytics/system-plans"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # Celery Worker
+  celery-worker:
+    build:
+      context: .
+      dockerfile: celery_worker/Dockerfile
+    container_name: fitbuddy_celery_worker
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:root123@db:5432/postgres
+      RABBITMQ_URL: amqp://fitbuddy:fitbuddy123@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+      - ./celery_worker:/app/celery_worker
+    restart: unless-stopped
+
+  # Celery Beat Scheduler
+  celery-beat:
+    build:
+      context: .
+      dockerfile: celery_worker/Dockerfile.beat
+    container_name: fitbuddy_celery_beat
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:root123@db:5432/postgres
+      RABBITMQ_URL: amqp://fitbuddy:fitbuddy123@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+      - ./celery_worker:/app/celery_worker
+    restart: unless-stopped
 
   # React Frontend
   frontend:
@@ -90,3 +198,5 @@ services:
 
 volumes:
   postgres_data:
+  rabbitmq_data:
+  redis_data:

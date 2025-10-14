@@ -22,6 +22,8 @@ class WorkoutSession(Base):
 	duration_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
 	# exercises performed in this workout session (stored as JSON)
 	exercises: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+	# calories burned during this workout session
+	calories_burned: Mapped[float | None] = mapped_column(nullable=True)
 
 	owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
 	owner: Mapped[User] = relationship(back_populates="workouts")
