@@ -4,7 +4,6 @@ import com.fitbuddy.analytics.entity.*;
 import com.fitbuddy.analytics.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,9 +20,8 @@ public class PlanGenerationService {
     private final WorkoutRepository workoutRepository;
     
     /**
-     * Scheduled task that runs every night at 2 AM to generate plans for new goals
+     * Generate plans for all goals that don't have corresponding custom workout plans
      */
-    @Scheduled(cron = "0 0 2 * * ?")
     public void generatePlansForNewGoals() {
         log.info("=== Starting Plan Generation for New Goals ===");
         
@@ -58,10 +56,10 @@ public class PlanGenerationService {
             return;
         }
         
-        // Check if user already has a custom plan
-        List<Workout> existingPlans = workoutRepository.findUserPlans(goal.getOwnerId());
+        // Check if this specific goal already has a custom plan
+        List<Workout> existingPlans = workoutRepository.findPlansByGoalId(goal.getId());
         if (!existingPlans.isEmpty()) {
-            log.info("User {} already has a custom plan, skipping generation", goal.getOwnerId());
+            log.info("Goal {} already has a custom plan, skipping generation", goal.getId());
             return;
         }
         
@@ -99,8 +97,8 @@ public class PlanGenerationService {
     private List<Goal> findGoalsWithoutPlans() {
         return goalRepository.findAll().stream()
             .filter(goal -> {
-                // Check if there's already a custom plan for this user (owner_id = user_id)
-                List<Workout> existingPlans = workoutRepository.findUserPlans(goal.getOwnerId());
+                // Check if there's already a custom plan for this specific goal
+                List<Workout> existingPlans = workoutRepository.findPlansByGoalId(goal.getId());
                 return existingPlans.isEmpty();
             })
             .collect(Collectors.toList());
@@ -166,6 +164,7 @@ public class PlanGenerationService {
         plan.setLevel(characteristics.getDifficulty());
         plan.setDurationDays(characteristics.getDurationDays());
         plan.setOwnerId(goal.getOwnerId()); // This makes it a custom plan for the user
+        plan.setGoalId(goal.getId()); // Link the plan to the specific goal
         
         return plan;
     }

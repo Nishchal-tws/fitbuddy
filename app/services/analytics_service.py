@@ -16,22 +16,21 @@ class AnalyticsServiceClient:
         Uses RabbitMQ for background processing instead of direct HTTP calls.
         """
         try:
-            # Publish message to RabbitMQ for background processing
-            success = rabbitmq_service.publish_progress_analysis(
+            # Publish message to RabbitMQ for plan generation
+            success = rabbitmq_service.publish_plan_generation(
                 user_id=user_id,
-                analysis_type="goal_analysis",
-                period="immediate"
+                goal_id=goal_id
             )
             
             if success:
-                logger.info(f"Successfully queued goal analysis for goal {goal_id}, user {user_id}")
+                logger.info(f"Successfully queued plan generation for goal {goal_id}, user {user_id}")
                 return True
             else:
-                logger.error(f"Failed to queue goal analysis for goal {goal_id}")
+                logger.error(f"Failed to queue plan generation for goal {goal_id}")
                 return False
                     
         except Exception as e:
-            logger.error(f"Unexpected error queuing goal analysis: {e}")
+            logger.error(f"Unexpected error queuing plan generation: {e}")
             return False
     
     async def seed_system_plans(self) -> bool:

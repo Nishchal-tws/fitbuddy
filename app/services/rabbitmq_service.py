@@ -131,6 +131,20 @@ class RabbitMQService:
             message=message
         )
     
+    def publish_plan_generation(self, user_id: int, goal_id: int = None) -> bool:
+        """Publish plan generation message"""
+        message = {
+            "user_id": user_id,
+            "goal_id": goal_id,
+            "timestamp": datetime.now().isoformat(),
+            "type": "plan_generation"
+        }
+        return self.publish_message(
+            exchange="fitness.exchange",
+            routing_key="plan.generation.request",
+            message=message
+        )
+    
     def publish_batch_processing(self, user_id: int, start_date: str, end_date: str) -> bool:
         """Publish batch processing message"""
         message = {

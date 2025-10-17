@@ -17,6 +17,7 @@ public class MessageListenerService {
     
     private final RedisTemplate<String, Object> redisTemplate;
     private final SimpleCalorieService calorieService;
+    private final PlanGenerationService planGenerationService;
     
     @RabbitListener(queues = RabbitMQConfig.WORKOUT_PROCESSING_QUEUE)
     public void handleWorkoutProcessing(Map<String, Object> message) {
@@ -54,6 +55,31 @@ public class MessageListenerService {
             
         } catch (Exception e) {
             log.error("Error processing progress analysis message: {}", e.getMessage());
+        }
+    }
+    
+    @RabbitListener(queues = RabbitMQConfig.PLAN_GENERATION_QUEUE)
+    public void handlePlanGeneration(Map<String, Object> message) {
+        log.info("Received plan generation message: {}", message);
+        
+        try {
+            Integer goalId = (Integer) message.get("goal_id");
+            String messageType = (String) message.get("type");
+            
+            if ("plan_generation".equals(messageType)) {
+                if (goalId != null) {
+                    // Generate plan for specific goal
+                    log.info("Generating plan for specific goal: {}", goalId);
+                    planGenerationService.generatePlanForSpecificGoal(goalId.longValue());
+                } else {
+                    // Generate plans for all new goals
+                    log.info("Generating plans for all new goals");
+                    planGenerationService.generatePlansForNewGoals();
+                }
+            }
+            
+        } catch (Exception e) {
+            log.error("Error processing plan generation message: {}", e.getMessage());
         }
     }
     
@@ -120,18 +146,29 @@ public class MessageListenerService {
         log.info("Processing workout statistics for workout {} and user {}", workoutId, userId);
         
         try {
-            // Calculate calories using the existing service
-            Map<String, Object> calorieResult = calorieService.calculateCaloriesForWorkout(workoutId, 30); // Default duration
+            // For now, use a simple calculation since we don't have access to FastAPI database
+            // In a real implementation, we'd need to integrate with FastAPI database
             
-            if (calorieResult != null && calorieResult.containsKey("caloriesBurned")) {
-                Double calories = (Double) calorieResult.get("caloriesBurned");
-                
-                // Cache the result
-                String cacheKey = String.format("calories:workout:%d:user:%d", workoutId, userId);
-                redisTemplate.opsForValue().set(cacheKey, calories, 3600); // 1 hour
-                
-                log.info("Successfully processed workout {} with {} calories", workoutId, calories);
-            }
+            // Get workout data from FastAPI (this would need HTTP client integration)
+            // For now, use default assumptions
+            double defaultDuration = 30.0; // minutes
+            double metValue = 4.0; // moderate intensity
+            double averageWeight = 70.0; // kg
+            double durationHours = defaultDuration / 60.0;
+            
+            // Basic formula: Calories = MET × Weight(kg) × Duration(hours)
+            double caloriesBurned = metValue * averageWeight * durationHours;
+            
+            // Cache the result
+            String cacheKey = String.format("calories:workout:%d:user:%d", workoutId, userId);
+            redisTemplate.opsForValue().set(cacheKey, caloriesBurned, 3600); // 1 hour
+            
+            log.info("Successfully processed workout {} with {} calories", workoutId, caloriesBurned);
+            
+            // TODO: In a real implementation, we'd need to:
+            // 1. Make HTTP call to FastAPI to get workout details
+            // 2. Calculate accurate calories based on actual workout data
+            // 3. Make HTTP call to FastAPI to update the workout with calculated calories
             
         } catch (Exception e) {
             log.error("Error processing workout statistics: {}", e.getMessage());

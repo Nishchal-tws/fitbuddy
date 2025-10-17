@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_current_user
@@ -26,12 +26,25 @@ def create_exercise(payload: ExerciseCreate, db: Session = Depends(get_db), curr
 
 @router.get("/", response_model=list[ExerciseRead])
 def list_exercises(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    rows = db.execute(
-        select(Exercise)
-        .where((Exercise.owner_id == current_user.id) | (Exercise.owner_id.is_(None)))
-        .order_by(Exercise.name)
-    ).scalars().all()
-    return rows
+    # Use raw SQL to avoid SQLAlchemy relationship issues
+    result = db.execute(text("""
+        SELECT id, name, category, description, owner_id 
+        FROM exercises 
+        WHERE owner_id IS NULL OR owner_id = :user_id
+        ORDER BY name
+    """), {"user_id": current_user.id})
+    
+    exercises = []
+    for row in result.fetchall():
+        exercises.append({
+            "id": row[0],
+            "name": row[1],
+            "category": row[2],
+            "description": row[3],
+            "owner_id": row[4]
+        })
+    
+    return exercises
 
 
 @router.get("/{exercise_id}", response_model=ExerciseRead)

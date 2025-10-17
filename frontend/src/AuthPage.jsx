@@ -1,7 +1,9 @@
 import { useState } from 'react' 
 import React from 'react';
+import logo from './assets/logo.svg'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 
 export default function AuthPage({ onLogin }) {
   const [mode, setMode] = useState('login')
@@ -88,7 +90,7 @@ export default function AuthPage({ onLogin }) {
     <div className="min-h-screen grid place-items-center bg-gray-50 p-6">
       <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
-          <div className="h-9 w-9 rounded-xl bg-primary-600 grid place-items-center text-white font-bold">FB</div>
+          <img src={logo} alt="Fit Buddy logo" className="h-9 w-9 rounded-xl" />
           <h1 className="text-2xl font-semibold text-gray-900">Fit Buddy</h1>
         </div>
         <p className="text-gray-500 mb-6">

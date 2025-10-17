@@ -31,17 +31,16 @@ def create_goal(payload: GoalCreate, db: Session = Depends(get_db), current_user
 	db.commit()
 	db.refresh(goal)
 
-	# Queue goal analysis for background processing
-	success = rabbitmq_service.publish_progress_analysis(
+	# Queue plan generation for the new goal
+	success = rabbitmq_service.publish_plan_generation(
 		user_id=current_user.id,
-		analysis_type="goal_analysis",
-		period="immediate"
+		goal_id=goal.id
 	)
 	
 	if success:
-		logger.info(f"Queued goal analysis for goal {goal.id}, user {current_user.id}")
+		logger.info(f"Queued plan generation for goal {goal.id}, user {current_user.id}")
 	else:
-		logger.warning(f"Failed to queue goal analysis for goal {goal.id}")
+		logger.warning(f"Failed to queue plan generation for goal {goal.id}")
 
 	# Cache the goal data
 	cache_goal_data(goal, current_user.id)
@@ -115,23 +114,20 @@ def update_goal(goal_id: int, payload: GoalUpdate, db: Session = Depends(get_db)
 	for k, v in data.items():
 		setattr(goal, k, v)
 	
-	# If goal is being marked as completed, also mark the corresponding plan as completed
+	# If goal is being marked as completed, delete the associated custom plans
 	if not was_completed and is_being_completed:
-		# Find the custom plan created for this goal
-		custom_plan = db.execute(
-			select(Workout).where(
-				Workout.owner_id == current_user.id,
-				Workout.created_at >= goal.created_at  # Plan created after goal
-			).order_by(Workout.created_at.desc())
-		).scalar_one_or_none()
+		# Find all custom plans created for this goal
+		custom_plans = db.execute(
+			select(Workout).where(Workout.goal_id == goal_id)
+		).scalars().all()
 		
-		if custom_plan:
-			custom_plan.is_completed = True
-			custom_plan.completed_at = datetime.utcnow()
-			db.add(custom_plan)
-			logger.info(f"✅ Marked plan {custom_plan.id} as completed for goal {goal_id}")
-		else:
-			logger.warning(f"⚠️ No custom plan found for goal {goal_id}")
+		# Delete all custom plans associated with this goal
+		for plan in custom_plans:
+			db.delete(plan)
+			logger.info(f"🗑️ Deleted custom plan {plan.id} for completed goal {goal_id}")
+		
+		if not custom_plans:
+			logger.info(f"ℹ️ No custom plans found for goal {goal_id}")
 	
 	db.add(goal)
 	db.commit()

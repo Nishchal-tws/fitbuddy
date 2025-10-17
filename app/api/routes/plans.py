@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, or_
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.api.deps import get_db, get_current_user
 from app.models.user import User
 from app.models.workout import Workout, SavedPlan
+from app.models.goal import Goal
 from app.schemas.plan import PlanRead, SavedPlanCreate, SavedPlanRead
 
 router = APIRouter(prefix="/plans", tags=["plans"])
@@ -47,8 +48,17 @@ def get_user_plans(
     print(f"DEBUG: Found {len(saved_plans)} subscribed plans")
     
     # Get custom plans created for this user (goal-based plans)
+    # Only include plans from incomplete goals (since completed goals should have their plans deleted)
     custom_plans = db.execute(
-        select(Workout).where(Workout.owner_id == current_user.id)
+        select(Workout).where(
+            and_(
+                Workout.owner_id == current_user.id,
+                or_(
+                    Workout.goal_id.is_(None),  # Plans without goal association (legacy)
+                    Goal.is_completed == False  # Plans from incomplete goals
+                )
+            )
+        ).outerjoin(Goal, Workout.goal_id == Goal.id)
         .order_by(Workout.created_at.desc())
     ).scalars().all()
     print(f"DEBUG: Found {len(custom_plans)} custom plans")

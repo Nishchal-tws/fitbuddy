@@ -11,6 +11,8 @@ from app.schemas.workout import WorkoutCreate, WorkoutRead, WorkoutUpdate
 from app.services.rabbitmq_service import rabbitmq_service
 from app.services.redis_service import redis_service
 from app.services.analytics_service import analytics_client
+from app.services.calorie_service import calorie_service
+from app.services.enhanced_calorie_service import enhanced_calorie_service
 
 logger = logging.getLogger(__name__)
 
@@ -35,20 +37,41 @@ def create_workout(
 	db.commit()
 	db.refresh(workout)
 	
-	# Queue workout processing for background calculation
+	# Calculate calories immediately using enhanced calorie service
 	if workout.duration_minutes and workout.duration_minutes > 0:
-		success = rabbitmq_service.publish_workout_processing(
-			workout_id=workout.id,
-			user_id=current_user.id
-		)
-		
-		if success:
-			logger.info(f"Queued workout processing for workout {workout.id}")
-			# Provide immediate estimate while processing in background
-			estimated_calories = workout.duration_minutes * 8.0  # Rough estimate
-			workout.calories_burned = estimated_calories
-		else:
-			logger.warning(f"Failed to queue workout processing for workout {workout.id}")
+		try:
+			# Try enhanced calculation first (uses exercises table)
+			calorie_result = enhanced_calorie_service.calculate_calories_from_exercise_name(
+				exercise_name=workout.title,
+				duration_minutes=workout.duration_minutes,
+				user_weight_kg=70.0  # Default weight, could be fetched from user profile
+			)
+			
+			workout.calories_burned = calorie_result["calories_burned"]
+			db.add(workout)
+			db.commit()
+			db.refresh(workout)
+			
+			logger.info(f"Calculated {workout.calories_burned} calories for workout {workout.id} "
+					   f"using method: {calorie_result.get('matched_method', 'unknown')}")
+			
+		except Exception as e:
+			logger.error(f"Error calculating calories for workout {workout.id}: {e}")
+			# Fallback to original service
+			try:
+				calorie_result = calorie_service.calculate_calories(
+					workout_title=workout.title,
+					duration_minutes=workout.duration_minutes,
+					user_weight_kg=70.0
+				)
+				workout.calories_burned = calorie_result["calories_burned"]
+			except:
+				# Ultimate fallback
+				workout.calories_burned = workout.duration_minutes * 4.0
+			
+			db.add(workout)
+			db.commit()
+			db.refresh(workout)
 	
 	# Cache the workout data
 	cache_workout_data(workout, current_user.id)
@@ -124,11 +147,111 @@ def update_workout(workout_id: int, payload: WorkoutUpdate, db: Session = Depend
 	# Invalidate cache
 	invalidate_workout_cache(workout_id, current_user.id)
 	
-	# Queue recalculation if duration changed
+	# Recalculate calories if duration changed
 	if 'duration_minutes' in data:
-		rabbitmq_service.publish_workout_processing(workout_id, current_user.id)
+		try:
+			calorie_result = calorie_service.calculate_calories(
+				workout_title=workout.title,
+				duration_minutes=workout.duration_minutes,
+				user_weight_kg=70.0
+			)
+			workout.calories_burned = calorie_result["calories_burned"]
+			db.add(workout)
+			db.commit()
+			logger.info(f"Recalculated {workout.calories_burned} calories for workout {workout_id}")
+		except Exception as e:
+			logger.error(f"Error recalculating calories for workout {workout_id}: {e}")
 	
 	return workout
+
+
+@router.post("/calculate-calories")
+def calculate_calories_direct(payload: dict, current_user: User = Depends(get_current_user)):
+	"""Calculate calories for a workout without saving it."""
+	try:
+		title = payload.get("title", "")
+		duration_minutes = payload.get("duration_minutes", 0)
+		user_weight_kg = payload.get("user_weight_kg", 70.0)
+		
+		if not title or duration_minutes <= 0:
+			raise HTTPException(status_code=400, detail="Invalid title or duration")
+		
+		# Try enhanced service first
+		result = enhanced_calorie_service.calculate_calories_from_exercise_name(
+			exercise_name=title,
+			duration_minutes=duration_minutes,
+			user_weight_kg=user_weight_kg
+		)
+		
+		return result
+		
+	except Exception as e:
+		logger.error(f"Error in direct calorie calculation: {e}")
+		raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/exercises/categories")
+def get_exercise_categories():
+	"""Get all available exercise categories."""
+	try:
+		categories = enhanced_calorie_service.get_all_categories()
+		return {"categories": categories}
+	except Exception as e:
+		logger.error(f"Error getting exercise categories: {e}")
+		raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/exercises/category/{category}")
+def get_exercises_by_category(category: str):
+	"""Get all exercises in a specific category."""
+	try:
+		exercises = enhanced_calorie_service.get_exercises_by_category(category)
+		return {"category": category, "exercises": exercises}
+	except Exception as e:
+		logger.error(f"Error getting exercises by category: {e}")
+		raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/exercises/search")
+def search_exercises(q: str = ""):
+	"""Search exercises by name or description."""
+	try:
+		if not q:
+			raise HTTPException(status_code=400, detail="Search query required")
+		
+		exercises = enhanced_calorie_service.search_exercises(q)
+		return {"query": q, "exercises": exercises}
+	except Exception as e:
+		logger.error(f"Error searching exercises: {e}")
+		raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{workout_id}/calories")
+def get_workout_calories(workout_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+	"""Get detailed calorie calculation for a workout."""
+	workout = db.get(WorkoutSession, workout_id)
+	if not workout or workout.owner_id != current_user.id:
+		raise HTTPException(status_code=404, detail="Workout not found")
+	
+	if not workout.duration_minutes or workout.duration_minutes <= 0:
+		raise HTTPException(status_code=400, detail="No duration data available for calorie calculation")
+	
+	# Calculate calories with detailed information
+	calorie_result = calorie_service.calculate_calories(
+		workout_title=workout.title,
+		duration_minutes=workout.duration_minutes,
+		user_weight_kg=70.0
+	)
+	
+	return {
+		"workout_id": workout.id,
+		"workout_title": workout.title,
+		"duration_minutes": workout.duration_minutes,
+		"calories_burned": calorie_result["calories_burned"],
+		"met_value": calorie_result["met_value"],
+		"matched_keywords": calorie_result["matched_keywords"],
+		"calculation_details": calorie_result
+	}
 
 
 @router.delete("/{workout_id}", status_code=status.HTTP_204_NO_CONTENT)

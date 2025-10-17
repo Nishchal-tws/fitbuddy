@@ -9,6 +9,7 @@ from app.db.session import Base
 
 if TYPE_CHECKING:
 	from app.models.user import User
+	from app.models.goal import Goal
 
 
 class WorkoutSession(Base):
@@ -43,6 +44,10 @@ class Workout(Base):
 	# If NULL => system plan; else user-specific plan
 	owner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True)
 	owner: Mapped[User] = relationship(back_populates="workout_plans")
+	
+	# Goal relationship for custom plans
+	goal_id: Mapped[int | None] = mapped_column(ForeignKey("goals.id", ondelete="CASCADE"), index=True, nullable=True)
+	goal: Mapped["Goal | None"] = relationship(back_populates="custom_plans")
 	
 	# Plan completion tracking
 	is_completed: Mapped[bool] = mapped_column(default=False, nullable=False)

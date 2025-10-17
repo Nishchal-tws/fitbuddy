@@ -9,6 +9,7 @@ from app.db.session import Base
 
 if TYPE_CHECKING:
 	from app.models.user import User
+	from app.models.workout import Workout
 
 
 class Goal(Base):
@@ -22,3 +23,6 @@ class Goal(Base):
 
 	owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
 	owner: Mapped[User] = relationship(back_populates="goals")
+	
+	# Custom plans generated for this goal
+	custom_plans: Mapped[list[Workout]] = relationship(back_populates="goal", cascade="all, delete-orphan")

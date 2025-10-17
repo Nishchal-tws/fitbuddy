@@ -18,4 +18,7 @@ public interface WorkoutRepository extends JpaRepository<Workout, Long> {
     
     @Query("SELECT w FROM Workout w WHERE w.ownerId = :ownerId ORDER BY w.createdAt DESC")
     List<Workout> findUserPlans(Long ownerId);
+    
+    @Query("SELECT w FROM Workout w WHERE w.goalId = :goalId ORDER BY w.createdAt DESC")
+    List<Workout> findPlansByGoalId(Long goalId);
 }

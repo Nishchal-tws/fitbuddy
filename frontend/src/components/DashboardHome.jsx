@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import ProgressChart from './ProgressChart.jsx'
-
 const API_BASE_URL = 'http://localhost:8000'
 const ANALYTICS_API_URL = 'http://localhost:8081'
 

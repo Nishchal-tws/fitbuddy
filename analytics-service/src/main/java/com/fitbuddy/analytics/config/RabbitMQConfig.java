@@ -15,6 +15,7 @@ public class RabbitMQConfig {
     // Queue Names
     public static final String WORKOUT_PROCESSING_QUEUE = "workout.processing.queue";
     public static final String PROGRESS_ANALYSIS_QUEUE = "progress.analysis.queue";
+    public static final String PLAN_GENERATION_QUEUE = "plan.generation.queue";
     public static final String REPORT_GENERATION_QUEUE = "report.generation.queue";
     public static final String GOAL_REMINDER_QUEUE = "goal.reminder.queue";
     public static final String BATCH_PROCESSING_QUEUE = "batch.processing.queue";
@@ -61,6 +62,11 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Queue planGenerationQueue() {
+        return QueueBuilder.durable(PLAN_GENERATION_QUEUE).build();
+    }
+
+    @Bean
     public Queue reportGenerationQueue() {
         return QueueBuilder.durable(REPORT_GENERATION_QUEUE).build();
     }
@@ -95,6 +101,14 @@ public class RabbitMQConfig {
                 .bind(progressAnalysisQueue())
                 .to(fitnessExchange())
                 .with("progress.analysis.*");
+    }
+
+    @Bean
+    public Binding planGenerationBinding() {
+        return BindingBuilder
+                .bind(planGenerationQueue())
+                .to(fitnessExchange())
+                .with("plan.generation.*");
     }
 
     @Bean

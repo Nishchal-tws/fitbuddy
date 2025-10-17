@@ -1,5 +1,6 @@
 import React from 'react'
 import { LayoutDashboard, Dumbbell, Target, Flag, TrendingUp, LogOut } from 'lucide-react'
+import logo from '../assets/logo.svg'
 
 export default function Sidebar({ activePage, setActivePage, onLogout }) {
   const navItems = [
@@ -14,7 +15,7 @@ export default function Sidebar({ activePage, setActivePage, onLogout }) {
     <aside className="h-screen sticky top-0 w-64 bg-white border-r border-gray-200 flex flex-col">
       <div className="px-5 py-6">
         <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-xl bg-primary-600 grid place-items-center text-white font-bold">FB</div>
+          <img src={logo} alt="Fit Buddy logo" className="h-9 w-9 rounded-xl" />
           <div className="text-xl font-semibold">Fit Buddy</div>
         </div>
       </div>

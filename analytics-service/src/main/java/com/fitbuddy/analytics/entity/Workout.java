@@ -34,4 +34,7 @@ public class Workout {
     
     @Column(name = "owner_id")
     private Long ownerId; // NULL for system plans, user ID for custom plans
+    
+    @Column(name = "goal_id")
+    private Long goalId; // NULL for system plans, goal ID for custom plans
 }
